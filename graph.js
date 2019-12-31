@@ -70,13 +70,20 @@ var func = {
 };
 
 function graphFunction(func, lowerLim, upperLim) {
-    coords = [];
 
-    for(let i = lowerLim; i<upperLim+1; i++) {
-        x = i;
+
+    var functionLineMaterial = new THREE.LineBasicMaterial( { color: 0xf0f0f0 } );
+    var functionLineGeometry = new THREE.Geometry();
+
+    for(let i = lowerLim*100; i<upperLim*100; i++) {
+        x = i/100;
         result = eval(func);
-        createPoint(i, result, 0);
+        functionLineGeometry.vertices.push(new THREE.Vector3(x, result, 0));
     }
+
+    var functionLine = new THREE.Line(functionLineGeometry, functionLineMaterial);
+    scene.add(functionLine);
+
 }
 
 var btnAddPoint = {add:function () { createPoint(point.xPos, point.yPos, point.zPos); }};
