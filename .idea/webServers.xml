@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="1e01c81d-c0a8-47ae-be4e-d3fc05270e0a" name="VolumeByRevolution" url="http://localhost">
+        <fileTransfer port="0" mountedRoot="D:\projects\VolumeByRevolution" accessType="MOUNT" />
+      </webServer>
+    </option>
+  </component>
+</project>
