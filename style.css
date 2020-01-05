@@ -1,0 +1,27 @@
+body {
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+#container {
+    width: 500px;
+}
+
+#viewport {
+    width: 100%;
+    height: 100vh;
+    background-color: red;
+}
+
+#controlPanel {
+    float: left;
+    width: 250px;
+    height: 100vh;
+    background-color: darkolivegreen;
+}
+
+#table {
+    width: 100%;
+    height: 100vh;
+}

@@ -1,9 +1,28 @@
+container = document.getElementById("viewport");
+controlPanel = document.getElementById("controlPanel")
+document.body.appendChild(container);
+
+var containerWidth = container.offsetWidth;
+var containerHeight = container.offsetHeight;
+var controlPanelWidth = controlPanel.offsetWidth;
+console.log(controlPanelWidth, containerWidth, containerHeight)
+
 var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.001, 1000 );
+var camera = new THREE.PerspectiveCamera( 75, (window.innerWidth-controlPanelWidth)/window.innerHeight, 0.001, 1000 );
 
 var renderer = new THREE.WebGLRenderer();
-renderer.setSize( window.innerWidth, window.innerHeight );
-document.body.appendChild( renderer.domElement );
+renderer.setSize( (window.innerWidth-controlPanelWidth), window.innerHeight );
+container.appendChild( renderer.domElement );
+
+// Resize the scene whenever the window is resized
+window.addEventListener("resize", onWindowResize, false);
+
+function onWindowResize() {
+    camera.aspect = (window.innerWidth-controlPanelWidth) / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize((window.innerWidth-controlPanelWidth), window.innerHeight)
+}
 
 // Create orbital control system (call 'controls.update'.)
 var controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -38,8 +57,6 @@ scene.add(yAxis);
 var zAxis = new THREE.Line(zAxisGeometry, zAxisMaterial);
 scene.add(zAxis);
 
-
-
 // Set the camera position. It's necessary to update the controls every time you change the cameras position.
 camera.position.z = 5;
 controls.update();
@@ -69,26 +86,106 @@ var func = {
     upperLim: 5
 };
 
-function graphFunction(func, lowerLim, upperLim) {
+function inTermsOfY(func) {
+    if(func.charAt(0) == 'x' && func.charAt(1) == '=') {
+        return true;
 
+        func = func.substr(1);
+        func = func.substr(1);
 
-    var functionLineMaterial = new THREE.LineBasicMaterial( { color: 0xf0f0f0 } );
-    var functionLineGeometry = new THREE.Geometry();
-
-    for(let i = lowerLim*100; i<upperLim*100; i++) {
-        x = i/100;
-        result = eval(func);
-        functionLineGeometry.vertices.push(new THREE.Vector3(x, result, 0));
+    } else {
+        return false;
     }
+}
 
-    var functionLine = new THREE.Line(functionLineGeometry, functionLineMaterial);
-    scene.add(functionLine);
+function interpreter(func, lowerLim, upperLim) {
+    // Power
+    for(let i=0; i<func.length; i++) {
+        if(func.charAt(i) == '^') {
+            funcInterp = 'Math.pow('+func.charAt(i-1)+','+func.charAt(i+1)+')';
+        }
+    }
+    // Trigonometric
 
 }
 
+function graphFunction(func, lowerLim, upperLim) {
+    funcInterp = func;
+    lowerLimInterp = lowerLim;
+    upperLimLimInterp = upperLim;
+
+    interpreter(func, lowerLim, upperLim);
+
+    var functionLineMaterial = new THREE.LineBasicMaterial( { color: 0xf0f0f0 } );
+    functionLineGeometry = new THREE.Geometry();
+    functionLineMesh = new THREE.Mesh(functionLineGeometry, functionLineMaterial);
+
+    for(let i = lowerLimInterp*100; i<upperLimLimInterp*100; i++) {
+        x = i/100;
+        y = i/100;
+        result = eval(funcInterp);
+
+        if(inTermsOfY(func) == true) {
+            functionLineGeometry.vertices.push(new THREE.Vector3(result, y, 0));
+        } else {
+            functionLineGeometry.vertices.push(new THREE.Vector3(x, result, 0));
+        }
+    }
+
+    functionLine = new THREE.Line(functionLineGeometry, functionLineMaterial);
+    scene.add(functionLine);
+}
+
+// START | TEMP
+var revolveAround = {
+    revolveAroundOther: ''
+}
+
+function revolve(axisOfRevolution) {
+    if(axisOfRevolution == 'x') {
+        for(let i=0; i<360; i++) {
+            let radian = (i * Math.PI) / (180);
+            let newline = functionLine.clone();
+            newline.rotation.x = radian;
+            scene.add(newline);
+        }
+    } else if (axisOfRevolution == 'y') {
+            for(let i=0; i<360; i++) {
+                let radian = (i * Math.PI) / (180);
+                let newline = functionLine.clone();
+                newline.rotation.y = radian;
+                scene.add(newline);
+            }
+    } else {
+        for(let i=0; i<360; i++) {
+            let radian = (i * Math.PI) / (180);
+            let newline = functionLine.clone();
+            scene.add(newline);
+            let axisOfRevolutionRef = axisOfRevolution.slice(2);
+            if(axisOfRevolution.charAt(0) == 'x') {
+                newline.position.set(axisOfRevolutionRef, 0, 0);
+                newline.rotation.y = radian;
+                newline.position.set(newline.position.x - axisOfRevolutionRef*Math.cos(radian), newline.position.y, newline.position.z + axisOfRevolutionRef*Math.sin(radian));
+            } else if (axisOfRevolution.charAt(0) == 'y') {
+                newline.position.set(0, axisOfRevolutionRef, 0);
+                newline.rotation.y = Math.PI
+                newline.rotation.x = radian;
+                newline.position.set(Math.abs(newline.position.x - axisOfRevolutionRef*Math.cos(radian)), newline.position.y, newline.position.z);
+            }
+
+
+
+
+        }
+
+
+    }
+}
+// END | TEMP
+
 var btnAddPoint = {add:function () { createPoint(point.xPos, point.yPos, point.zPos); }};
 var btnGraphFunction = {add:function () { graphFunction(func.function, func.lowerLim, func.upperLim) }};
-
+var btnRevolve = {add:function () { revolve(revolveAround.revolveAroundOther) }};
 
 window.onload = function () {
     var gui = new dat.GUI({name: 'controls'});
@@ -104,8 +201,17 @@ window.onload = function () {
     graphFunction.add(func, 'lowerLim').name('Lower Limit');
     graphFunction.add(func, 'upperLim').name('Upper Limit');
     graphFunction.add(btnGraphFunction, 'add').name('Graph Function');
+
+    var revolve = gui.addFolder('Revolve Around Axis');
+    revolve.add(revolveAround, 'revolveAroundOther').name('Revolve Around');
+    revolve.add(btnRevolve, 'add').name('Revolve');
 }
 
+// TEMP START
+
+
+
+//TEMP END
 // Render loop (updates camera, controls, and render.)
 var animate = function () {
     requestAnimationFrame( animate );
